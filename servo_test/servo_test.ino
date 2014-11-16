@@ -4,11 +4,11 @@
 
 Servo gear_servo;
 
-// GEAR THREE: 2050
+// GEAR THREE: 1990
 // GEAR FOUR: 2150
 // GEAR FIVE: 2300
 // GEAR ONe: 1690
-// GEAR two: 1890
+// GEAR two: 1840
 
 
 void setup()
