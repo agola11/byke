@@ -31,8 +31,8 @@ double p_speed_constant;
 double p_current_speed;
 
 double curr_time; // current time for speed measurements
-double gear_ratios[] = {1.0 / 0.44680851063829785, 1.0 / 0.3148148148148148, 1.0 / 0.29, 1.0 / 0.2619047619047619, 1.0 / 0.23529411764705882}; // wheel cadence / pedal cadence
-double target_cadence = 12.0; 
+double gear_ratios[] = {0.44680851063829785, 0.3148148148148148, 0.29, 0.2619047619047619, 0.23529411764705882}; // pedal cadence / wheel cadence
+double target_cadence = 6.5; 
 
 volatile int CURRENT_GEAR;
 volatile int CAN_CHANGE = 1;
@@ -86,7 +86,7 @@ void do_delay() {
 void shift_down() {
   
   CAN_CHANGE = 0;
-  if (CURRENT_GEAR != 0) {
+  if (CURRENT_GEAR != 0 && p_current_speed >= 3.50) {
     CURRENT_GEAR--;
     gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]-50);
     do_delay();
@@ -102,7 +102,7 @@ void shift_down() {
 void shift_up() {
 
   CAN_CHANGE = 0;
-  if (CURRENT_GEAR != 4) {
+  if (CURRENT_GEAR != 4 && p_current_speed >= 3.50) {
     CURRENT_GEAR++;
     gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
   }
@@ -127,7 +127,7 @@ void loop()
     curr_time = millis();
   }
   
-  double error = p_current_speed - target_cadence;
+  double error = (w_current_speed*gear_ratios[CURRENT_GEAR]) - target_cadence;
   
   if (error <= 0) 
   {
