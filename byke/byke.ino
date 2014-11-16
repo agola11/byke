@@ -61,12 +61,12 @@ void setup()
 
 void loop() 
 {
-  Serial.print(w_current_speed);
+  Serial.print(wheel_count);
   Serial.print(", ");
-  Serial.println(p_current_speed);
+  Serial.println(pedal_count);
   
   // Handle zero speed case
-  if ((millis() - curr_time) >= 1000.0) {
+  if ((millis() - curr_time) >= 1250.0) {
     if (change_p_count <= 0) {p_current_speed = 0;}
     if (change_w_count <= 0) {w_current_speed = 0;}
     change_p_count = 0;
