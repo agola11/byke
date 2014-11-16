@@ -8,15 +8,17 @@
 #define w_pin 2 
 #define p_pin 3
 #define servo_pin A0
+#define NUM_W_MAGS 8
+#define NUM_P_MAGS 4
 
 volatile unsigned int wheel_count; // number of wheel interrupts
 volatile unsigned int pedal_count; // number of pedal interrupts
 
-double w_time_stamps[] = {0.0, 0.0, 0.0, 0.0}; 
+double w_time_stamps[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
 double w_speed_constant;
 double w_current_speed;
 
-double p_time_stamps[] = {0.0, 0.0};
+double p_time_stamps[] = {0.0, 0.0, 0.0, 0.0};
 double p_speed_constant;
 double p_current_speed;
 
@@ -54,25 +56,17 @@ void loop()
 {
   Serial.print(w_current_speed);
   Serial.print(", ");
-  Serial.println(wheel_count);
-  gear_servo.write(0);
-  //delay(1000);
-  gear_servo.write(90);
-  //delay(1000);
-  gear_servo.write(180);
-  //delay(1000);
-  gear_servo.write(90);
-  delay(1000);
+  Serial.println(p_current_speed);
 }
 
 void update_wheel_count() 
 {
-  if (wheel_count < 4) {
+  if (wheel_count < NUM_W_MAGS) {
     w_time_stamps[wheel_count] = millis();
     wheel_count++;
   }
   else {
-    unsigned int index = wheel_count % 4;
+    unsigned int index = wheel_count % NUM_W_MAGS;
     double now = millis();
     w_current_speed = w_speed_constant / (now - w_time_stamps[index]);
     w_time_stamps[index] = now;
@@ -82,12 +76,12 @@ void update_wheel_count()
 
 void update_pedal_count()
 {
-  if (pedal_count < 2) {
+  if (pedal_count < NUM_P_MAGS) {
     p_time_stamps[pedal_count] = millis();
     pedal_count++;
   }
   else {
-    unsigned int index = pedal_count % 2;
+    unsigned int index = pedal_count % NUM_P_MAGS;
     double now = millis();
     p_current_speed = p_speed_constant / (now - p_time_stamps[index]);
     p_time_stamps[index] = now;
