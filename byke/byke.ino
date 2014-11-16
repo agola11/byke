@@ -18,7 +18,7 @@ volatile unsigned int pedal_count; // number of pedal interrupts
 volatile unsigned int change_w_count; // for zero speed detection
 volatile unsigned int change_p_count; // for zero speed detection
 
-int servo_outs[] = {1680, 1840, 2000, 2150, 2300};
+int servo_outs[] = {1510, 1730, 1870, 2025, 2200};
 
 // constants associated with wheel speed
 double w_time_stamps[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
