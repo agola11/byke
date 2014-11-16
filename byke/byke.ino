@@ -28,7 +28,7 @@ void setup()
   
   // Set up wheel hall-effect interrupt
   pinMode(w_pin, INPUT);
-  attachInterrupt(0, increase_wheel_count, CHANGE);
+  attachInterrupt(0, update_wheel_count, CHANGE);
   
   // Set up pedal hall-effect interrupt
   pinMode(p_pin, INPUT);
@@ -78,11 +78,6 @@ void update_wheel_count()
     w_time_stamps[index] = now;
     wheel_count++;
   }
-}
-
-void increase_wheel_count()
-{
-  wheel_count++;
 }
 
 void update_pedal_count()
