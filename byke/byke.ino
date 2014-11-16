@@ -18,7 +18,7 @@ volatile unsigned int pedal_count; // number of pedal interrupts
 volatile unsigned int change_w_count; // for zero speed detection
 volatile unsigned int change_p_count; // for zero speed detection
 
-int servo_outs[] = {1690, 1890, 2050, 2150, 2300};
+int servo_outs[] = {1675, 1890, 2050, 2150, 2300};
 
 // constants associated with wheel speed
 double w_time_stamps[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
@@ -31,8 +31,8 @@ double p_speed_constant;
 double p_current_speed;
 
 double curr_time; // current time for speed measurements
-double gear_ratios[] = {1.0 / 0.44680851063829785, 1.0 / 0.3148148148148148, 1.0 / 0.29, 1.0 / 0.2619047619047619, 1.0 / 0.23529411764705882}; 
-double target_cadence = 5.0; 
+double gear_ratios[] = {1.0 / 0.44680851063829785, 1.0 / 0.3148148148148148, 1.0 / 0.29, 1.0 / 0.2619047619047619, 1.0 / 0.23529411764705882}; // wheel cadence / pedal cadence
+double target_cadence = 7.0; 
 
 volatile int CURRENT_GEAR;
 volatile int CAN_CHANGE = 1;
@@ -74,26 +74,34 @@ void setup()
   
 }
 
+void do_delay() {
+  delay(100);
+}
+
 // Shift gear down
 void shift_down() {
+  
   CAN_CHANGE = 0;
   if (CURRENT_GEAR != 0) {
     CURRENT_GEAR--;
     gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
   }
-  delay(500); // allow time for gear shifting
+  do_delay();
   CAN_CHANGE = 1;
+  
 }
 
 // Shift gear up
 void shift_up() {
+
   CAN_CHANGE = 0;
   if (CURRENT_GEAR != 4) {
     CURRENT_GEAR++;
     gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
   }
-  delay(500); // allow time for gear shifting
+  do_delay();
   CAN_CHANGE = 1;
+ 
 }
 
 void loop() 
@@ -116,14 +124,16 @@ void loop()
   if (error < 0) 
   {
     if (CURRENT_GEAR != 0) {
-      if ((target_cadence * (0.75 * gear_ratios[CURRENT_GEAR-1] + 0.25 * gear_ratios[CURRENT_GEAR])) > p_current_speed) {
+      // ( wheelcad_low + (wheelcad_hi - wheelcad_low)*.25 ) 
+      if ((target_cadence * (0.6 * gear_ratios[CURRENT_GEAR-1] + 0.4 * gear_ratios[CURRENT_GEAR])) > p_current_speed) {
         if (CAN_CHANGE) {shift_down();}
       }
     }
   }
   else {
     if (CURRENT_GEAR != 4) {
-      if ((target_cadence * (0.25 * gear_ratios[CURRENT_GEAR+1] + 0.75 * gear_ratios[CURRENT_GEAR])) < p_current_speed) {
+      // wheelcad_cur + (wheelcad_hi - wheelcad_cur) * 0.75
+      if ((target_cadence * (0.6 * gear_ratios[CURRENT_GEAR+1] + 0.4 * gear_ratios[CURRENT_GEAR])) < p_current_speed) {
         if (CAN_CHANGE) {shift_up();}
       }
     }
