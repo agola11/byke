@@ -34,7 +34,7 @@ void setup()
   
   // Set up pedal hall-effect interrupt
   pinMode(p_pin, INPUT);
-  attachInterrupt(1, update_pedal_count, RISING);
+  attachInterrupt(1, update_pedal_count, CHANGE);
   
   // Initialize wheel speed variables
   wheel_count = 0;
