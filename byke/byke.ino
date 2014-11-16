@@ -1,8 +1,10 @@
 
-/* Byke: an automatic bike transmission.
+/*
+   Byke: an automatic bike transmission.
    Designed and developed by Joseph Bolling, Ankush Gola, and Ted Brundage.
    HackPrinceton Fall 2014
 */
+
 #include <Servo.h>
 
 #define w_pin 2 
@@ -16,14 +18,24 @@ volatile unsigned int pedal_count; // number of pedal interrupts
 volatile unsigned int change_w_count; // for zero speed detection
 volatile unsigned int change_p_count; // for zero speed detection
 
+int servo_outs[] = {1690, 1890, 2050, 2150, 2300};
+
+// constants associated with wheel speed
 double w_time_stamps[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; 
 double w_speed_constant;
 double w_current_speed;
 
+// constants associated with pedal speed
 double p_time_stamps[] = {0.0, 0.0, 0.0, 0.0};
 double p_speed_constant;
 double p_current_speed;
-double curr_time;
+
+double curr_time; // current time for speed measurements
+double gear_ratios[] = {1.0 / 0.44680851063829785, 1.0 / 0.3148148148148148, 1.0 / 0.29, 1.0 / 0.2619047619047619, 1.0 / 0.23529411764705882}; 
+double target_cadence = 5.0; 
+
+volatile int CURRENT_GEAR;
+volatile int CAN_CHANGE = 1;
 
 Servo gear_servo;
 
@@ -41,29 +53,54 @@ void setup()
   
   // Initialize wheel speed variables
   wheel_count = 0;
-  w_speed_constant = 10000.0; /* TODO: Change */
+  w_speed_constant = 10000.0;
   w_current_speed = 0.0;
   change_w_count = 0;
   
   // Initialize pedal speed variables
   pedal_count = 0;
-  p_speed_constant = 10000.0; /* TODO: Change */
+  p_speed_constant = 10000.0;
   p_current_speed = 0.0;
   change_p_count = 0;
   
   // Initialize servo
   gear_servo.attach(servo_pin);
   
+  // Initialize gear/ servo out
+  CURRENT_GEAR = 2;
+  gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
   
   curr_time = millis();
   
 }
 
+// Shift gear down
+void shift_down() {
+  CAN_CHANGE = 0;
+  if (CURRENT_GEAR != 0) {
+    CURRENT_GEAR--;
+    gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
+  }
+  delay(500); // allow time for gear shifting
+  CAN_CHANGE = 1;
+}
+
+// Shift gear up
+void shift_up() {
+  CAN_CHANGE = 0;
+  if (CURRENT_GEAR != 4) {
+    CURRENT_GEAR++;
+    gear_servo.writeMicroseconds(servo_outs[CURRENT_GEAR]);
+  }
+  delay(500); // allow time for gear shifting
+  CAN_CHANGE = 1;
+}
+
 void loop() 
 {
-  Serial.print(wheel_count);
+  Serial.print(w_current_speed);
   Serial.print(", ");
-  Serial.println(pedal_count);
+  Serial.println(p_current_speed);
   
   // Handle zero speed case
   if ((millis() - curr_time) >= 1250.0) {
@@ -74,8 +111,27 @@ void loop()
     curr_time = millis();
   }
   
+  double error = p_current_speed - target_cadence;
+  
+  if (error < 0) 
+  {
+    if (CURRENT_GEAR != 0) {
+      if ((target_cadence * (0.75 * gear_ratios[CURRENT_GEAR-1] + 0.25 * gear_ratios[CURRENT_GEAR])) > p_current_speed) {
+        if (CAN_CHANGE) {shift_down();}
+      }
+    }
+  }
+  else {
+    if (CURRENT_GEAR != 4) {
+      if ((target_cadence * (0.25 * gear_ratios[CURRENT_GEAR+1] + 0.75 * gear_ratios[CURRENT_GEAR])) < p_current_speed) {
+        if (CAN_CHANGE) {shift_up();}
+      }
+    }
+  }
+  
 }
 
+// ISR for hall effect change, use to calculate rear wheel speed.
 void update_wheel_count() 
 {
   if (wheel_count < NUM_W_MAGS) {
@@ -91,6 +147,7 @@ void update_wheel_count()
   change_w_count++;
 }
 
+// ISR for hall effect change, use to calculate pedal cadence
 void update_pedal_count()
 {
   if (pedal_count < NUM_P_MAGS) {
